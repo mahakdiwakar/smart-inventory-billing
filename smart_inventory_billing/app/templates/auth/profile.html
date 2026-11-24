@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% block content %}<div class="row g-3"><div class="col-md-5"><div class="card p-3"><h5>Profile</h5>
+<p class="mb-1"><b>{{ current_user.full_name }}</b></p><p class="mb-1">{{ current_user.email }}</p><p class="mb-0 text-muted">Role: {{ current_user.role.replace('_',' ') }}</p></div></div>
+<div class="col-md-5"><div class="card p-3"><h5>Change password</h5><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<input type="password" name="current" class="form-control mb-2" placeholder="Current password" required>
+<input type="password" name="new" class="form-control mb-2" placeholder="New password (8+ characters)" required>
+<input type="password" name="confirm" class="form-control mb-3" placeholder="Confirm new password" required><button class="btn btn-primary">Change password</button></form></div></div></div>{% endblock %}

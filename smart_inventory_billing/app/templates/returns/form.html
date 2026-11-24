@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block content %}<div class="card p-4"><h5>Return against {{ sale.invoice_no }}</h5>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><table class="table"><thead><tr><th>Item</th><th>Sold</th><th>Already returned</th><th style="width:110px">Return qty</th><th style="width:160px">Condition</th></tr></thead><tbody>
+{% for i in sale.items %}<tr><td>{{ i.product.product_name }}</td><td>{{ i.quantity }}</td><td>{{ i.returned_qty }}</td>
+<td><input type="number" min="0" max="{{ i.quantity - i.returned_qty }}" name="qty_{{ i.sale_item_id }}" value="0" class="form-control form-control-sm"></td>
+<td><select name="cond_{{ i.sale_item_id }}" class="form-select form-select-sm"><option>Resalable</option><option>Damaged</option></select></td></tr>{% endfor %}</tbody></table>
+<div class="row g-2"><div class="col-md-6"><input name="reason" class="form-control" placeholder="Reason for return"></div>
+<div class="col-md-3"><select name="refund_method" class="form-select">{% for m in ['Cash','UPI','Card','Bank_Transfer','Store_Credit'] %}<option value="{{ m }}">{{ m.replace('_',' ') }}</option>{% endfor %}</select></div>
+<div class="col-auto"><button class="btn btn-primary">Save return</button></div></div><div class="small text-muted mt-2">Resalable items go back into stock. Damaged items are logged in the ledger but not restocked. Refund = what the customer paid for those units, including GST.</div></form></div>{% endblock %}

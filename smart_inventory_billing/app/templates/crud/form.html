@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}<div class="card p-4" style="max-width:760px"><h5>{{ 'Edit' if obj else 'Add' }} {{ cfg.title|lower }}</h5>
+{% for e in errors %}<div class="alert alert-danger py-2">{{ e }}</div>{% endfor %}{% if cfg.note %}<div class="small text-muted mb-3">{{ cfg.note }}</div>{% endif %}
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="row g-3">
+{% for f in fields %}{% set v = form.get(f.name) if form else (obj[f.name] if False else (obj|attr(f.name) if obj else (True if f.type=='bool' else '')) ) %}
+<div class="col-md-{{ 12 if f.type=='textarea' else 6 }}">{% if f.type=='bool' %}<div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="{{ f.name }}" id="{{ f.name }}" {{ 'checked' if (v==True or v=='on') }}><label class="form-check-label" for="{{ f.name }}">{{ f.label }}</label></div>
+{% else %}<label class="form-label">{{ f.label }}{% if f.required and f.name!='sku' %} *{% endif %}</label>
+{% if f.type=='select' %}<select name="{{ f.name }}" class="form-select"><option value="">Select</option>{% for val,lab in f.options %}<option value="{{ val }}" {{ 'selected' if v|string==val|string }}>{{ lab }}</option>{% endfor %}</select>
+{% elif f.type=='textarea' %}<textarea name="{{ f.name }}" class="form-control" rows="2">{{ v or '' }}</textarea>
+{% else %}<input name="{{ f.name }}" value="{{ v if v is not none else '' }}" class="form-control" type="{{ 'date' if f.type=='date' else 'text' }}" {% if f.type in ('money','int') %}inputmode="decimal"{% endif %}>{% endif %}{% endif %}</div>{% endfor %}</div>
+<div class="mt-4"><button class="btn btn-primary">Save</button> <a class="btn btn-light" href="{{ url_for('crud.list_view', key=key) }}">Cancel</a></div></form></div>{% endblock %}

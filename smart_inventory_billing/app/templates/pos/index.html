@@ -1,0 +1,27 @@
+{% extends 'base.html' %}{% block content %}<div class="pos-grid"><div>
+<div class="card p-3 mb-3"><div class="row g-2"><div class="col-md-7"><input id="q" class="form-control" placeholder="Search product name or SKU" autofocus></div>
+<div class="col-md-5"><select id="cat" class="form-select"><option value="">All categories</option>{% for c in categories %}<option value="{{ c.category_id }}">{{ c.category_name }}</option>{% endfor %}</select></div></div></div>
+<div class="row g-2" id="grid"></div></div>
+<div class="card p-3" style="position:sticky;top:70px"><h6>Cart</h6><div id="cart" class="mb-2"></div>
+<select id="cust" class="form-select form-select-sm mb-2"><option value="">Walk-in customer</option>{% for c in customers %}<option value="{{ c.customer_id }}">{{ c.full_name }} ({{ c.phone }})</option>{% endfor %}</select>
+<div class="input-group input-group-sm mb-2"><span class="input-group-text">Discount ₹</span><input id="disc" type="number" min="0" step="0.01" value="0" class="form-control"></div>
+<table class="table table-sm mb-2"><tr><td>Subtotal</td><td class="text-end" id="sub">0.00</td></tr><tr><td>GST</td><td class="text-end" id="gst">0.00</td></tr><tr class="fw-bold fs-5"><td>Grand total</td><td class="text-end" id="tot">0.00</td></tr></table>
+<div class="d-flex gap-2 mb-2"><select id="m1" class="form-select form-select-sm"><option value="Cash">Cash</option><option>UPI</option><option>Card</option><option value="Bank_Transfer">Bank Transfer</option></select><input id="a1" type="number" step="0.01" class="form-control form-control-sm" placeholder="Amount"></div>
+<div class="d-flex gap-2 mb-2"><select id="m2" class="form-select form-select-sm"><option value="">Split with (optional)</option><option value="Cash">Cash</option><option>UPI</option><option>Card</option><option value="Bank_Transfer">Bank Transfer</option></select><input id="a2" type="number" step="0.01" class="form-control form-control-sm" placeholder="Amount"></div>
+<div id="err" class="text-danger small mb-2"></div><button id="pay" class="btn btn-primary w-100">Complete sale</button></div></div>{% endblock %}
+{% block scripts %}<script>
+let cart={},items={},key=crypto.randomUUID(),busy=false;const $=id=>document.getElementById(id),f2=n=>n.toFixed(2);
+async function load(){const r=await fetch(`/pos/products?q=${encodeURIComponent($('q').value)}&category=${$('cat').value}`);const ps=await r.json();
+$('grid').innerHTML=ps.length?ps.map(p=>{items[p.id]=p;return `<div class="col-6 col-md-4 col-xl-3"><div class="pcard ${p.stock<=0?'out':''}" onclick="add(${p.id})"><div class="fw-semibold">${p.name}</div><div class="text-muted small">${p.sku}</div><div class="d-flex justify-content-between mt-1"><b>₹${f2(p.price)}</b><span class="small ${p.stock<=5?'text-danger':'text-muted'}">${p.stock} in stock</span></div></div></div>`}).join(''):'<div class="text-muted p-4">No products match.</div>'}
+function add(id){const p=items[id],c=cart[id]||0;if(c+1>p.stock){$('err').textContent=`Only ${p.stock} of ${p.name} in stock`;return}$('err').textContent='';cart[id]=c+1;draw()}
+function chg(id,d){const n=(cart[id]||0)+d;if(n<=0)delete cart[id];else if(n>items[id].stock){$('err').textContent='Not enough stock';return}else cart[id]=n;draw()}
+function totals(){let s=0;for(const id in cart)s+=items[id].price*cart[id];const d=Math.min(parseFloat($('disc').value)||0,s);let g=0;for(const id in cart){const l=items[id].price*cart[id];g+=(l-(s?d*l/s:0))*items[id].gst/100}return{s,d,g,t:Math.round(s-d+g)}}
+function draw(){$('cart').innerHTML=Object.keys(cart).map(id=>`<div class="d-flex justify-content-between align-items-center border-bottom py-1"><div class="small">${items[id].name}<br><span class="text-muted">₹${f2(items[id].price)}</span></div><div class="text-nowrap"><button class="btn btn-sm btn-light" onclick="chg(${id},-1)">−</button> ${cart[id]} <button class="btn btn-sm btn-light" onclick="chg(${id},1)">+</button> <button class="btn btn-sm text-danger" onclick="chg(${id},-999)"><i class="bi bi-x-lg"></i></button></div></div>`).join('')||'<div class="text-muted small">Tap a product to add it.</div>';
+const t=totals();$('sub').textContent=f2(t.s);$('gst').textContent=f2(t.g);$('tot').textContent=f2(t.t);if(!$('a1').dataset.t)$('a1').value=t.t||''}
+$('a1').addEventListener('input',e=>e.target.dataset.t=1);$('disc').addEventListener('input',()=>{$('a1').dataset.t='';draw()});
+$('q').addEventListener('input',load);$('cat').addEventListener('change',load);
+$('pay').onclick=async()=>{if(busy||!Object.keys(cart).length)return;busy=true;$('pay').disabled=true;$('err').textContent='';
+const pays=[{method:$('m1').value,amount:$('a1').value}];if($('m2').value&&$('a2').value)pays.push({method:$('m2').value,amount:$('a2').value});
+const r=await postJSON('/pos/checkout',{idempotency_key:key,customer_id:$('cust').value,discount:$('disc').value||0,payments:pays,items:Object.keys(cart).map(id=>({product_id:+id,quantity:cart[id]}))});
+if(r.ok)location=r.url;else{$('err').textContent=r.error;busy=false;$('pay').disabled=false}};
+load();draw();</script>{% endblock %}

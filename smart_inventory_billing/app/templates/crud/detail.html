@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block content %}<div class="row g-3"><div class="col-md-4"><div class="card p-3"><h5>{{ obj.full_name if key=='customers' else obj.supplier_name }}</h5>
+{% for f in cfg.fields %}{% if f.type!='bool' %}<div class="small"><span class="text-muted">{{ f.label.split('(')[0] }}:</span> {{ obj|attr(f.name) or '-' }}</div>{% endif %}{% endfor %}
+<hr><div class="text-muted small">{{ 'Total spending' if key=='customers' else 'Total purchased' }}</div><div class="fs-4 fw-bold">{{ total|inr }}</div>
+<a class="btn btn-sm btn-outline-secondary mt-2" href="{{ url_for('crud.form_view', key=key, id=obj|attr(cfg.pk)) }}">Edit</a></div></div>
+<div class="col-md-8"><div class="card p-3"><h6>{{ 'Purchase history' if kind=='purchases' else 'Invoices' }}</h6><table class="table table-sm"><tbody>
+{% for h in history %}{% if kind=='sales' %}<tr><td><a href="{{ url_for('sales.invoice', sale_id=h.sale_id) }}">{{ h.invoice_no }}</a></td><td>{{ h.sale_date.strftime('%d %b %Y') }}</td><td>{{ h.status.replace('_',' ') }}</td><td class="text-end">{{ h.total|inr }}</td></tr>
+{% else %}<tr><td><a href="{{ url_for('purchases.detail', pid=h.purchase_id) }}">{{ h.purchase_no }}</a></td><td>{{ h.purchase_date }}</td><td class="text-end">{{ h.total|inr }}</td></tr>{% endif %}
+{% else %}<tr><td class="text-muted">Nothing yet</td></tr>{% endfor %}</tbody></table></div></div></div>{% endblock %}

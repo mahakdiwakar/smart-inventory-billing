@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% block content %}
+<div class="no-print d-flex gap-2 mb-3 flex-wrap"><a class="btn btn-outline-secondary" href="{{ url_for('sales.list_view') }}">Back</a><button class="btn btn-primary" onclick="print()">Print</button>
+<a class="btn btn-outline-primary" href="{{ url_for('sales.invoice_pdf', sale_id=sale.sale_id) }}">Download PDF</a>
+<a class="btn btn-outline-secondary" href="?fmt={{ 'a4' if thermal else 'thermal' }}">{{ 'A4 view' if thermal else 'Thermal receipt' }}</a>
+{% if sale.status in ('Completed','Partially_Returned') and can('returns') %}<a class="btn btn-outline-warning" href="{{ url_for('sales.return_form', sale_id=sale.sale_id) }}">Return items</a>{% endif %}
+{% if sale.status=='Completed' %}<form method="post" action="{{ url_for('sales.cancel', sale_id=sale.sale_id) }}" data-confirm="Cancel this invoice and put the stock back?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger">Cancel invoice</button></form>{% endif %}</div>
+<div class="card p-4 {{ 'thermal' if thermal }}" {% if not thermal %}style="max-width:820px"{% endif %}>
+<div class="{{ '' if thermal else 'd-flex justify-content-between' }}"><div><h5 class="mb-0">{{ store.store_name }}</h5><div class="small">{{ store.store_address }}<br>GSTIN {{ store.store_gstin }}{% if store.store_phone %} | {{ store.store_phone }}{% endif %}</div></div>
+<div class="{{ '' if thermal else 'text-end' }}"><b>Tax Invoice {{ sale.invoice_no }}</b><br>{{ sale.sale_date.strftime('%d %b %Y %H:%M') }}{% if sale.status!='Completed' %}<br><span class="badge text-bg-danger">{{ sale.status.replace('_',' ') }}</span>{% endif %}</div></div><hr>
+<div class="small mb-2">Customer: {{ sale.customer.full_name if sale.customer else 'Walk-in' }}{% if sale.customer and sale.customer.gstin %} | GSTIN {{ sale.customer.gstin }}{% endif %}</div>
+<table class="table table-sm"><thead><tr><th>Item</th><th>Qty</th><th class="text-end">Rate</th>{% if not thermal %}<th class="text-end">Disc</th><th class="text-end">GST</th>{% endif %}<th class="text-end">Total</th></tr></thead><tbody>
+{% for i in sale.items %}<tr><td>{{ i.product.product_name }}{% if not thermal %}<br><small class="text-muted">HSN {{ i.product.hsn_code }} @ {{ i.gst_rate }}%</small>{% endif %}</td><td>{{ i.quantity }}</td><td class="text-end">{{ '%.2f'|format(i.unit_price) }}</td>{% if not thermal %}<td class="text-end">{{ '%.2f'|format(i.discount) }}</td><td class="text-end">{{ '%.2f'|format(i.gst_amount) }}</td>{% endif %}<td class="text-end">{{ '%.2f'|format(i.line_total) }}</td></tr>{% endfor %}</tbody></table>
+<table class="table table-sm ms-auto" style="max-width:320px"><tr><td>Taxable value</td><td class="text-end">{{ sale.taxable_value|inr }}</td></tr>
+{% if sale.igst %}<tr><td>IGST</td><td class="text-end">{{ sale.igst|inr }}</td></tr>{% else %}<tr><td>CGST</td><td class="text-end">{{ sale.cgst|inr }}</td></tr><tr><td>SGST</td><td class="text-end">{{ sale.sgst|inr }}</td></tr>{% endif %}
+<tr><td>Round off</td><td class="text-end">{{ sale.round_off|inr }}</td></tr><tr class="fw-bold"><td>Grand total</td><td class="text-end">{{ sale.total|inr }}</td></tr>
+<tr><td>Paid ({% for p in sale.payments %}{{ p.method.replace('_',' ') }}{{ ', ' if not loop.last }}{% endfor %})</td><td class="text-end">{{ sale.amount_paid|inr }}</td></tr><tr><td>Balance due</td><td class="text-end">{{ sale.balance_due|inr }}</td></tr></table>
+<div class="small text-muted text-center">{{ store.invoice_footer }}</div></div>{% endblock %}

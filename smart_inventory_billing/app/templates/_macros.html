@@ -1,0 +1,5 @@
+{% macro pager(p) %}{% if p.pages > 1 %}<nav class="no-print"><ul class="pagination pagination-sm mb-0">
+{% for n in p.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+{% if n %}<li class="page-item {{ 'active' if n == p.page }}"><a class="page-link" href="{{ page_url(n) }}">{{ n }}</a></li>
+{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}</ul></nav>{% endif %}{% endmacro %}
+{% macro empty(msg) %}<div class="text-center text-muted py-5"><i class="bi bi-inbox fs-1"></i><div>{{ msg }}</div></div>{% endmacro %}

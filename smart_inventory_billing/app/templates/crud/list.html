@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% from '_macros.html' import pager, empty %}{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">{{ cfg.title }}</h4>
+<a class="btn btn-primary" href="{{ url_for('crud.form_view', key=key) }}"><i class="bi bi-plus-lg"></i> Add</a></div>
+{% if key=='products' %}<div class="row g-3 mb-3">{% for l,v in [('Products',stats.total),('Low stock',stats.low),('Out of stock',stats.out),('Inventory value',stats.value|inr)] %}
+<div class="col-6 col-md-3"><div class="card kpi p-3"><div class="label">{{ l }}</div><div class="value">{{ v }}</div></div></div>{% endfor %}</div>{% endif %}
+<div class="card p-3"><form class="row g-2 mb-3" method="get"><div class="col-md-4"><input name="q" value="{{ s }}" class="form-control" placeholder="Search {{ cfg.title|lower }}"></div>
+{% if key=='products' %}<div class="col-md-3"><select name="category" class="form-select"><option value="">All categories</option>{% for c in categories %}<option value="{{ c.category_id }}" {{ 'selected' if request.args.get('category')==c.category_id|string }}>{{ c.category_name }}</option>{% endfor %}</select></div>
+<div class="col-md-2"><select name="stock" class="form-select">{% for v,l in [('','Any stock'),('in','In stock'),('low','Low'),('out','Out')] %}<option value="{{ v }}" {{ 'selected' if request.args.get('stock','')==v }}>{{ l }}</option>{% endfor %}</select></div>{% endif %}
+<div class="col-auto"><button class="btn btn-outline-primary">Filter</button></div></form>
+{% if cfg.note %}<div class="small text-muted mb-2">{{ cfg.note }}</div>{% endif %}
+{% if p.items %}<div class="table-responsive"><table class="table table-hover"><thead><tr>{% for f,l in cfg.cols %}<th><a class="text-decoration-none text-reset" href="{{ page_url(1)|replace('page=1','') }}{{ '&' if '?' in page_url(1) else '?' }}sort={{ '-' if sort==f else '' }}{{ f }}">{{ l.split('|')[0] }}</a></th>{% endfor %}<th></th></tr></thead><tbody>
+{% for o in p.items %}<tr>{% for f,l in cfg.cols %}{% set v = get(o,f) %}{% set fmt = l.split('|')[1] if '|' in l else '' %}<td>
+{% if fmt=='inr' %}{{ v|inr }}{% elif fmt=='yesno' %}<span class="badge text-bg-{{ 'success' if v else 'secondary' }}">{{ 'Active' if v else 'Inactive' }}</span>
+{% elif fmt=='badge' %}<span class="badge text-bg-{{ {'In stock':'success','Low stock':'warning','Out of stock':'danger'}[v] }}">{{ v }}</span>
+{% elif loop.first and cfg.detail %}<a href="{{ url_for('crud.detail', key=key, id=get(o,cfg.pk)) }}">{{ v }}</a>{% else %}{{ v if v is not none else '' }}{% endif %}</td>{% endfor %}
+<td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('crud.form_view', key=key, id=get(o,cfg.pk)) }}">Edit</a>
+{% if cfg.active %}<form class="d-inline" method="post" action="{{ url_for('crud.toggle', key=key, id=get(o,cfg.pk)) }}" data-confirm="Change active status?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-warning">{{ 'Deactivate' if get(o,cfg.active) else 'Activate' }}</button></form>{% endif %}
+{% if cfg.deletable %}<form class="d-inline" method="post" action="{{ url_for('crud.delete', key=key, id=get(o,cfg.pk)) }}" data-confirm="Delete permanently?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Delete</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+<div class="d-flex justify-content-between align-items-center"><small class="text-muted">{{ p.total }} record(s)</small>{{ pager(p) }}</div>
+{% else %}{{ empty('No ' ~ cfg.title|lower ~ ' found. Add one or change the filters.') }}{% endif %}</div>{% endblock %}

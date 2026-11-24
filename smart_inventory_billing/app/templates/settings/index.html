@@ -1,0 +1,2 @@
+{% extends 'base.html' %}{% block content %}<div class="card p-4" style="max-width:720px"><h5>Store settings</h5><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="row g-3">
+{% for k in keys %}<div class="col-md-6"><label class="form-label">{{ k.replace('_',' ').title() }}</label><input name="{{ k }}" value="{{ s[k] }}" class="form-control"></div>{% endfor %}</div><button class="btn btn-primary mt-3">Save settings</button></form></div>{% endblock %}
