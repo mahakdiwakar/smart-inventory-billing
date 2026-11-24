@@ -1,0 +1,25 @@
+# Environment variables (NEVER commit secrets!)
+.env
+*.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+.venv/
+.venv*/
+env/
+ENV/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Local data & uploads
+smart_inventory_billing/app/static/uploads/*
+!smart_inventory_billing/app/static/uploads/.gitkeep
+smart_inventory_billing/instance/
+instance/
